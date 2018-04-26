@@ -1,10 +1,11 @@
 import sys
 from PIL import Image
-import numpy as np
 import util
 from encoder import Encoder
 from decoder import Decoder
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 def printUsage():
     print("Usage: python [Options] jpeg.py [image.tif]")
@@ -19,14 +20,22 @@ if __name__ =="__main__":
         try:
             image = Image.open('pics/'+sys.argv[1])
             image_arr = np.array(image)
+
+            #image_arr = plt.imread('pics/cameraman.tif')
             n=8
+            dct_opt = "cust"
             base = util.calc_dct_base(n)
+
             enc = Encoder(n,base)
-            dct =enc.myDCT(image_arr)
-
-
             dec = Decoder(n,base)
-            im = dec.myIDCT(dct)
+
+            a = enc.encode(image_arr,dct_opt)
+
+            #printing the very first block for debugging purps
+            df = pd.DataFrame(a[0:8,0:8])
+            print(df)
+
+            im = dec.decode(a,dct_opt)
 
 
 
