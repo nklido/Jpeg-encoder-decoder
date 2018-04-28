@@ -3,9 +3,10 @@ from scipy import fftpack
 import util
 
 class Decoder:
-    def __init__(self,n,base):
-        self.n=n
-        self.base=base
+    def __init__(self):
+        self.n=8
+        self.base=util.calc_dct_base(8)
+
 
     def performIDCT(self,dct,idct_opt="cust"):
         if(idct_opt=="cust"):
@@ -38,7 +39,9 @@ class Decoder:
                         fi[x][y]+=self.base[u,v,x,y]*cosines[u][v]
         return fi
 
-    def performIQuantization(self,f):
+    def performIQuantization(self,f,LM=False,TM=False):
+
+
         N= self.n
         width = f.shape [0]
         height = f.shape [1]
@@ -46,13 +49,23 @@ class Decoder:
         rows = int(height/N)
         cols = int(width/N)
 
+        LumMask =np.ones([rows,cols])
+        TexMask =np.ones([rows,cols])
+
+        if(LM):
+            file = open('pics/'+self.img_name+"_luminance.txt", 'r')
+            lines = file.read().split("\t")
+            for i in range(32):
+                LumMask[i,:]=lines[i*32:i*32+32]
+
         qu_array = util.getQuantizationArray()
         im =np.zeros((rows*N,cols*N))
         for i in range(rows):
             for j in range(cols):
-                im[i*N:i*N+N,j*N:j*N+N] = np.multiply(f[i*N:i*N+N,j*N:j*N+N],qu_array)
+                im[i*N:i*N+N,j*N:j*N+N] = np.multiply(f[i*N:i*N+N,j*N:j*N+N],(LumMask[i,j]*TexMask[i,j])*qu_array)
         return im
 
-    def decode(self,dct,idct_opt):
+    def decode(self,name,dct,idct_opt,LM=False,TM=False):
+        self.img_name=name
         #return self.performIDCT(dct,idct_opt)
-        return self.performIDCT(self.performIQuantization(dct),idct_opt)
+        return self.performIDCT(self.performIQuantization(dct,LM,TM),idct_opt)

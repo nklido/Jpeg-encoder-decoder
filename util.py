@@ -41,7 +41,7 @@ def getQuantizationArray():
                      [49,64,78,87,103,121,120,101],
                      [72,92,95,98,112,100,103,99]])
 
-    return q
+    return a
 
 def myRLE(array):
     arr=np.zeros(array.size)
