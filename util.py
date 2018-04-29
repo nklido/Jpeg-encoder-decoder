@@ -20,9 +20,10 @@ def calc_dct_base(N):
     return base
 
 
-def getQuantizationArray():
+def getQuantizationArray(quality = "high"):
     #example higher quality/lower value quantization array
-    a = np.array([[6,4,4,6,10,16,20,24],
+    if(quality=="high"):
+        return np.array([[6,4,4,6,10,16,20,24],
                 [5,5,6,8,10,23,24,22],
                 [6,5,6,10,16,23,28,22],
                 [6,7,9,12,20,35,32,25],
@@ -30,9 +31,9 @@ def getQuantizationArray():
                 [10,14,22,26,32,42,45,37],
                 [20,26,31,35,41,48,48,40],
                 [29,37,38,39,45,40,41,40]])
-
+    elif(quality=="low"):
     #example lower quality/high value quantization array
-    q = np.array([[16,11,10,16,24,40,51,61],
+        return np.array([[16,11,10,16,24,40,51,61],
                     [12,12,14,19,26,58,60,55],
                     [14,13,16,24,40,57,69,56],
                      [14,17,22,29,51,87,80,62],
@@ -40,8 +41,8 @@ def getQuantizationArray():
                      [24,35,55,64,81,104,113,92],
                      [49,64,78,87,103,121,120,101],
                      [72,92,95,98,112,100,103,99]])
-
-    return a
+    else:
+        raise ValueError('Invalid quality parameter...')
 
 def myRLE(array):
     arr=np.zeros(array.size)

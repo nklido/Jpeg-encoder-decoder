@@ -18,7 +18,7 @@ if __name__ =="__main__":
         printUsage()
     else:
         try:
-
+            #this is an uncommited change
             img_name = sys.argv[1]
             image = Image.open('pics/'+img_name)
             image_arr = np.array(image)
@@ -31,15 +31,11 @@ if __name__ =="__main__":
 
             a = enc.encode(img_name,image_arr,dct_opt,LM=True)
 
-            #printing the very first block for debugging purps
-            #df = pd.DataFrame(a[0:8,0:8])
-            #print(df)
-
             im = dec.decode(img_name,a,dct_opt,LM=True)
 
             image_arr2 = np.array(image)
             a = enc.encode(img_name,image_arr,dct_opt)
-            im2 = dec.decode(img_name,a,dct_opt,LM=True)
+            im2 = dec.decode(img_name,a,dct_opt)
 
             fig,(ax1,ax2,ax3) = plt.subplots(1,3,sharey=True)
             ax1.set_title("Original image")
@@ -50,6 +46,13 @@ if __name__ =="__main__":
             ax3.imshow(im,cmap='gray')
 
             plt.show()
+
+            df = pd.DataFrame(image_arr[0:8,0:8])
+            print(df)
+            df = pd.DataFrame(im2[0:8,0:8])
+            print(df)
+            df = pd.DataFrame(im[0:8,0:8])
+            print(df)
 
         except FileNotFoundError:
             print("Please specify an image file..")
