@@ -17,18 +17,21 @@ class Encoder:
                         dct[u][v] += self.base[u,v,x,y]*f[x][y]
         return dct
 
-    def performDCT(self,f,dct_opt="cust"):
-        if(dct_opt=="cust"):
+    def performDCT(self,f,dct_opt="custom"):
+        if(dct_opt=="custom"):
             dct =np.zeros((self.rows*8,self.cols*8))
             for i in range(self.rows):
                 for j in range(self.cols):
                     dct[i*8:i*8+8,j*8:j*8+8] = self.cosTrans(f[i*8:i*8+8,j*8:j*8+8])
-        elif(dct_opt=="spicy"):
-            dct = fftpack.dct(f)#,norm='ortho')
-            #dct =fftpack.dct(fftpack.dct(f.T, norm='ortho').T, norm='ortho')
+        elif(dct_opt=="DCTI"):
+            dct =fftpack.dct(fftpack.dct(f,type=1),type=1)
+        elif(dct_opt=="DCTII"):
+            dct =fftpack.dct(fftpack.dct(f.T, norm='ortho').T, norm='ortho')
+        elif(dct_opt=="DCTIII"):
+            dct =fftpack.dct(fftpack.dct(f.T,type=3,norm='ortho').T,type=3, norm='ortho')
 
         else:
-            raise ValueError("Invalid dct option,available options: cust, spicy...")
+            raise ValueError("Invalid dct option. Please use --help for usage.")
         return dct
 
 
@@ -59,7 +62,7 @@ class Encoder:
         if(enableLM):
             LumMask = self.calculateLumMask(LumMask,arr)
             self.writeLumMaskToFile(LumMask)
-        qu_array = util.getQuantizationArray()
+        qu_array = util.getQuantizationArray(quality)
         qu =np.zeros((self.rows*8,self.cols*8))
         for i in range(self.rows):
             for j in range(self.cols):
@@ -106,12 +109,10 @@ class Encoder:
                 file.write("%s\t" % str(LumMask[i,j]))
             file.write("\n")
 
-    def encode(self,img_name,f,dct,LM=False,TM=False):
+    def encode(self,img_name,f,dct,quality="high",LM=False,TM=False):
         self.img_name = img_name
-
         width,height = f.shape [0],f.shape [1]
         #for now assuming that image can be divided perfectly by 8 on both dimensions
         self.rows,self.cols = int(height/self.n),int(width/self.n)
-        #return self.performDCT(f,dct)
-        return self.performQuantization(self.performDCT(f,dct),enableLM=LM,enableTM=TM)
+        return self.performQuantization(self.performDCT(f,dct),quality=quality,enableLM=LM,enableTM=TM)
 

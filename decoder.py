@@ -8,18 +8,21 @@ class Decoder:
         self.base=util.calc_dct_base(8)
 
 
-    def performIDCT(self,dct,idct_opt="cust"):
-        if(idct_opt=="cust"):
+    def performIDCT(self,dct,idct_opt="custom"):
+        if(idct_opt=="custom"):
             N= self.n
             im =np.zeros((self.rows*N,self.cols*N))
             for i in range(self.rows):
                 for j in range(self.cols):
                     im[i*N:i*N+N,j*N:j*N+N] = self.cosTransi(dct[i*N:i*N+N,j*N:j*N+N])
-        elif(idct_opt=="spicy"):
-            im =fftpack.idct(dct)#,norm='ortho')
-            #im =fftpack.idct(fftpack.idct(dct.T, norm='ortho').T, norm='ortho')
+        elif(idct_opt=="DCTI"):
+            im =fftpack.idct(fftpack.idct(dct,type=1),type=1)
+        elif(idct_opt=="DCTII"):
+            im =fftpack.idct(fftpack.idct(dct.T, norm='ortho').T, norm='ortho')
+        elif(idct_opt=="DCTIII"):
+            im =fftpack.idct(fftpack.idct(dct.T,type=3, norm='ortho').T,type=3,norm='ortho')
         else:
-            raise ValueError
+            raise ValueError("Invalid dct option. Please use --help for usage.")
         return im
 
     def cosTransi(self,cosines):
@@ -40,7 +43,7 @@ class Decoder:
         if(enableLM):
             LumMask= self.readLumMaskFromFile(LumMask)
 
-        qu_array = util.getQuantizationArray()
+        qu_array = util.getQuantizationArray(quality)
         im =np.zeros((self.rows*N,self.cols*N))
         for i in range(self.rows):
             for j in range(self.cols):
@@ -54,11 +57,9 @@ class Decoder:
             LumMask[i,:]=lines[i*32:i*32+32]
         return LumMask
 
-    def decode(self,name,dct,idct_opt,LM=False,TM=False):
+    def decode(self,name,dct,idct_opt,quality="high",LM=False,TM=False):
         self.img_name=name
         width,height = dct.shape [0],dct.shape [1]
         #for now assuming that image can be divided perfectly by 8 on both dimensions
         self.rows,self.cols = int(height/self.n),int(width/self.n)
-
-        #return self.performIDCT(dct,idct_opt)
-        return self.performIDCT(self.performIQuantization(dct,enableLM = LM,enableTM = TM),idct_opt)
+        return self.performIDCT(self.performIQuantization(dct,enableLM = LM,enableTM = TM,quality=quality),idct_opt)
