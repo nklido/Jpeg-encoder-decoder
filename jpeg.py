@@ -1,5 +1,5 @@
 import sys
-from PIL import Image
+from PIL import Image,ImageChops
 import util
 from encoder import Encoder
 from decoder import Decoder
@@ -17,6 +17,21 @@ def printUsage():
             "\t{:9s}".format("--help")+"ignores all other options and shows usage)\n"+
             "\t{:9s}".format("-debug")+"ignores all other options and executs fixed statements(debugging only.)"
     )
+
+def is_greyscale(im):
+    """
+    Check if image is monochrome (1 channel or 3 identical channels)
+    """
+    if im.mode not in ("L", "RGB"):
+        raise ValueError("Unsuported image mode")
+
+    if im.mode == "RGB":
+        rgb = im.split()
+        if ImageChops.difference(rgb[0],rgb[1]).getextrema()[1]!=0:
+            return False
+        if ImageChops.difference(rgb[0],rgb[2]).getextrema()[1]!=0:
+            return False
+    return True
 
 
 def setArg(option,value=""):
@@ -62,12 +77,13 @@ if __name__ =="__main__":
         if(img_name==""):
             raise ValueError("Please specify an .tif image file.")
         try:
+
             image = Image.open('pics/'+img_name)
             image_arr = np.array(image)
             enc = Encoder()
             dec = Decoder()
             a = enc.encode(img_name.replace(".tif",""),image_arr,dct_opt,quality=quality,LM=LM)
-            im = dec.decode(img_name.replace(".tif",""),a,dct_opt,quality=quality,LM=LM)
+            im = dec.decode(img_name.replace(".tif",""),a,idct_opt=dct_opt,quality=quality,LM=LM)
 
             fig,(ax1,ax2) = plt.subplots(1,2,sharey=True)
             ax1.set_title("Original image")
@@ -84,7 +100,6 @@ if __name__ =="__main__":
 
     if(debug):
         try:
-            #this is an uncommited change
             img_name = "cameraman"
             image = Image.open('pics/cameraman.tif')
             image_arr = np.array(image)
@@ -95,7 +110,6 @@ if __name__ =="__main__":
             dec = Decoder()
 
             a = enc.encode(img_name,image_arr,dct_opt,LM=True)
-
             im = dec.decode(img_name,a,dct_opt,LM=True)
 
             image_arr2 = np.array(image)
@@ -104,9 +118,9 @@ if __name__ =="__main__":
 
             fig,(ax1,ax2,ax3) = plt.subplots(1,3,sharey=True)
             ax1.set_title("Original image")
-            ax1.imshow(image_arr,cmap='gray')
+            ax1.imshow(image_arr)#,cmap='gray')
             ax2.set_title("After dct -> idct")
-            ax2.imshow(im2,cmap='gray')
+            ax2.imshow(im2)#,cmap='gray')
             ax3.set_title("After dct -> idct with Luminance masking")
             ax3.imshow(im,cmap='gray')
             plt.show()

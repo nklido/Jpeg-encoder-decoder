@@ -44,14 +44,34 @@ def getQuantizationArray(quality = "high"):
     else:
         raise ValueError('Invalid quality parameter...')
 
-def myRLE(array):
-    arr=np.zeros(array.size)
+
+""" Double usage:
+    Passing a 2D array as argument will parse it zig-zag and return 1D array
+    Passing a 1D will do the reverse operation and return a 2D array
+        """
+#works. should be rewritten.
+def zigzagparse(array,reverse=False):
+    if (len(array.shape)==1):
+        reverse =True
+
+    if (not reverse):
+        arr=np.zeros(array.size)
+        arr[0] = array[0,0]
+    else: # this might be confusing. In reverse operation array is the result and not arr.
+          # thats because the 2D array needs to be parsed in both operations.
+        arr = array
+        array = np.zeros((8,8))
+        array[0,0] = arr[0]
     up=False
     i,j,k = 0,1,1
-    arr[0] = array[0,0]
+
     #arr[array.size-1] = array[array.shape[0]-1,array.shape[1]-1]
     while(i<array.shape[0] and i<array.shape[1]):
-        arr[k]=array[i,j]
+        if (len(array.shape)==2):
+            if(not reverse):
+                arr[k]=array[i,j]
+            else:
+                array[i,j]=arr[k]
         k+=1
         if(j==array.shape[1]-1 and up): #right side moving up
             i+=1
@@ -83,4 +103,7 @@ def myRLE(array):
         else:
             i=i+1
             j=j-1
-    return arr
+    if(not reverse):
+        return arr
+    else:
+        return array

@@ -69,6 +69,23 @@ class Encoder:
                 qu[i*8:i*8+8,j*8:j*8+8] = np.rint(np.divide(arr[i*8:i*8+8,j*8:j*8+8],(LumMask[i,j]*TexMask[i,j])*qu_array))
         return qu
 
+    #accepts an array and for each 8x8 block generates a list of triplets -->(numberofzeros,#bits to repr value,value)
+    # result is a list with a list of triplets
+    def RLE(self,array):
+        result = []
+        for i in range(self.rows):
+            for j in range(self.cols):
+                zeroCount=0
+                triplets =[]
+                zig = util.zigzagparse(array[i*8:i*8+8,j*8:j*8+8])
+                for value in zig.astype(int):
+                    if(value!=0):
+                        triplets.append((zeroCount,(int(value)).bit_length(),value))
+                        zeroCount =0
+                    else:
+                        zeroCount+=1
+                result.append(triplets)
+        return result
 
 
     def calculateLumMask(self,LumMask,arr):
@@ -114,5 +131,10 @@ class Encoder:
         width,height = f.shape [0],f.shape [1]
         #for now assuming that image can be divided perfectly by 8 on both dimensions
         self.rows,self.cols = int(height/self.n),int(width/self.n)
-        return self.performQuantization(self.performDCT(f,dct),quality=quality,enableLM=LM,enableTM=TM)
 
+
+        dct = self.performDCT(f,dct)
+        quant_array = self.performQuantization(dct,quality=quality,enableLM=LM,enableTM=TM)
+
+        list_of_triplets = self.RLE(quant_array)
+        return list_of_triplets
