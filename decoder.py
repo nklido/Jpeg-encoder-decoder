@@ -1,7 +1,8 @@
 import numpy as np
 from scipy import fftpack
 import util
-import array
+
+
 class Decoder:
     def __init__(self):
         self.n=8
@@ -36,27 +37,21 @@ class Decoder:
                         fi[x][y]+=self.base[u,v,x,y]*cosines[u][v]
         return fi
 
-    def performIQuantization(self,f,quality="high",enableLM=False,enableTM=False):
+    def performIQuantization(self,f,quality="high"):
         N= self.n
-        LumMask =np.ones([self.rows,self.cols])
-        TexMask =np.ones([self.rows,self.cols])
-
-        if(enableLM):
-            LumMask= self.readLumMaskFromFile(LumMask)
-
         qu_array = util.getQuantizationArray(quality)
         im =np.zeros((self.rows*N,self.cols*N))
         for i in range(self.rows):
             for j in range(self.cols):
-                im[i*N:i*N+N,j*N:j*N+N] = np.multiply(f[i*N:i*N+N,j*N:j*N+N],(LumMask[i,j]*TexMask[i,j])*qu_array)
+                im[i*N:i*N+N,j*N:j*N+N] = np.multiply(f[i*N:i*N+N,j*N:j*N+N],qu_array)#(LumMask[i,j]*TexMask[i,j])*qu_array)
         return im
 
     #inverse RLE, accepts a list of triplets of type (numOfzeros,#bits to repr value,value) and returns a 1D array.
     def RLEi(self,list_of_triplets):
-        array = np.zeros((32*8,32*8))
-        for i in range(32):
-            for j in range(32):
-                triplets = list_of_triplets[(i*32)+j]
+        array = np.zeros((self.rows*8,self.cols*8))
+        for i in range(self.rows):
+            for j in range(self.cols):
+                triplets = list_of_triplets[(i*self.rows)+j]
                 reverse = np.zeros(64)
                 at = 0
                 for triplet in triplets:
@@ -66,6 +61,8 @@ class Decoder:
                 array[i*8:i*8+8,j*8:j*8+8] =util.zigzagparse(reverse)
         return array
 
+    #only for debugging
+    #TODO generalize for TexMask
     def readLumMaskFromFile(self,LumMask):
         file = open('pics/'+self.img_name+"_luminance.txt", 'r')
         lines = file.read().split("\t")
@@ -73,15 +70,22 @@ class Decoder:
             LumMask[i,:]=lines[i*32:i*32+32]
         return LumMask
 
-    def decode(self,name,list_of_triplets,idct_opt,quality="high",LM=False,TM=False):
-        self.img_name=name
-        quant_arr=self.RLEi(list_of_triplets)
-        width,height = quant_arr.shape [0],quant_arr.shape [1]
-
-
-        #for now assuming that image can be divided perfectly by 8 on both dimensions
+    def decode(self,name,size,data,idct_opt,numOfBands=1,quality="high"):
+        width,height = size[0],size[1]
         self.rows,self.cols = int(height/self.n),int(width/self.n)
-        dct   =  self.performIQuantization(quant_arr,enableLM = LM,enableTM = TM,quality=quality) #revereseQuanti\
 
-        image =  self.performIDCT(dct,idct_opt)
+        if(numOfBands == 1):
+            quant_arr=self.RLEi(data)
+
+            dct    =  self.performIQuantization(quant_arr,quality=quality) #revereseQuanti\
+            image  = self.performIDCT(dct,idct_opt)
+        else:
+            image = np.empty((256,256,numOfBands))
+            for i in range(numOfBands):
+                quant_arr=self.RLEi(data[i])
+                width,height = quant_arr.shape [0],quant_arr.shape [1]
+                #for now assuming that image can be divided perfectly by 8 on both dimensions
+                self.rows,self.cols = int(height/self.n),int(width/self.n)
+                dct   =  self.performIQuantization(quant_arr,quality=quality) #revereseQuanti\
+                image[0:width,0:height,i] = self.performIDCT(dct,idct_opt)
         return image
